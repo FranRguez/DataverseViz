@@ -1,0 +1,112 @@
+<div id="graphic"></div>
+    <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+
+    <script>	
+	// Write inside d3.json the root for the 'bysubject' json.
+d3.json('uploads/1/1/4/5/114501131/bysubject.json').then(function(data){
+
+        //sort bars based on value
+       // data = data.sort(function (a, b) {
+         //   return d3.ascending(a.data.count, b.data.count);
+        //})
+		console.log(data.data);
+		var div = d3.select("body").append("div")	
+			.attr("class", "tooltip")				
+			.style("opacity", 0);
+	
+	
+		data = data.data.sort(function (a, b) {
+        return d3.ascending(a.count, b.count);
+			});
+        //set up svg using margin conventions - we'll need plenty of room on the left for labels
+        var margin = {
+            top: 15,
+            right: 50,
+            bottom: 15,
+            left: 250
+        };
+
+        var width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+        var svg = d3.select("#graphic").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var x = d3.scaleLinear()
+            .range([0, width])
+            .domain([0, d3.max(data, function (d) {
+                return d.count;
+	
+            })]);
+
+		var y = d3.scaleBand()
+            .rangeRound([height, 0])
+			.padding(0.1)
+            .domain(data.map(function (d) {
+                return d.subject;
+            }));
+
+        //make y axis to show bar names
+        var yAxis = d3.axisLeft(y);
+		
+        var gy = svg.append("g")
+            .attr("class", "y axis")
+			.style("font", "14px times")
+			.style('font-family', '"Open Sans", sans-serif')
+
+            .call(yAxis)
+
+        var bars = svg.selectAll(".bar")
+            .data(data)
+            .enter()
+            .append("g");
+
+
+        //append rects
+        bars.append("rect")
+            .attr("class", "bar")
+            .attr("y", function (d) {
+                return y(d.subject);
+            })
+            .attr("height", "32")
+            .attr("x", 0)
+            .attr("width", function (d) {
+                return x(d.count);
+            })
+			.attr("fill", "orange")
+			.style("stroke", "black")
+			.style("stroke-width", "1")
+			.style("opacity", "0.6")
+			.on("mouseover", function(d) {
+				div.transition()		
+                .duration(200)		
+                .style("opacity", .9);		
+            div	.html(d.count + "<br/>"  + d.subject)	
+                .style("left", (d3.event.pageX) + "px")		
+                .style("top", (d3.event.pageY - 28) + "px");	
+				d3.select(this).transition().style("opacity", "0.9")})
+			.on("mouseout", function(d) {
+				d3.select(this).transition().duration("25").style("opacity", "0.6")});
+
+
+        //add a value label to the right of each bar
+        bars.append("text")
+            .attr("class", "label")
+            //y position of the label is halfway down the bar
+            .attr("y", function (d) {
+                return y(d.subject) + "32" / 2 + 4;
+            })
+            //x position is 3 pixels to the right of the bar
+            .attr("x", function (d) {
+                return x(d.count) + 3;
+            })
+            .text(function (d) {
+                return d.count;
+            });
+        });
+
+    </script>
+ 

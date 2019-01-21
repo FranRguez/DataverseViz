@@ -1,0 +1,122 @@
+*FITS stands for Flexible Image Transport System
+<u></u>
+<div id="graphic2"></div>
+<script>
+var column1=[];
+var column2=[];
+
+
+// Write inside d3.json the root for the 'fileformats' csv, with a format similar to the specified in the GitHub.
+d3.csv('uploads/1/1/4/5/114501131/fileformats.csv').then(function(data){
+	data.map(function(d){
+                column1.push(d.name);
+                column2.push(+d.count);
+            })
+            //called after the AJAX is success
+            console.log("name",column1);
+            console.log("count",column2);
+			
+		var complete= { "name": column1, "count": column2}
+
+		var div = d3.select("u").append("div")	
+			.attr("class", "tooltip")				
+			.style("opacity", 0);
+	
+		
+		var datum=complete
+		var div = d3.select("#graphic2").append("div")	
+			.attr("class", "tooltip")				
+			.style("opacity", 0);
+	
+        //set up svg using margin conventions - we'll need plenty of room on the left for labels
+        var margin = {
+            top: 75,
+            right: 50,
+            bottom: 200,
+            left: 250
+        };
+
+        var width = 600 - margin.left - margin.right-20,
+            height = 500 - margin.top - margin.bottom;
+
+        var svg = d3.select("#graphic2").append("svg")
+            .attr("width", width + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+			.attr("transform","rotate(-90 175 175)");
+
+        var x = d3.scaleLinear()
+            .range([0, width])
+            .domain([0, d3.max(complete.count, function (d) {
+                return d;
+	
+            })]);
+
+		var y = d3.scaleBand()
+            .rangeRound([width+50, 0])
+			.padding(0.1)
+            .domain(data.map(function (d) {
+                return d.name;
+            }));
+
+        //make y axis to show bar names
+        var yAxis = d3.axisLeft(y);
+		
+        var gy = svg.append("g")
+            .attr("class", "y axis")
+			.style("font", "12 px times")
+			.style('font-family', '"Open Sans", sans-serif')
+
+            .call(yAxis)
+
+        var bars = svg.selectAll(".bar")
+            .data(data)
+            .enter()
+            .append("g");
+
+        bars.append("rect")
+            .attr("class", "bar")
+            .attr("y", function (d) {
+                return y(d.name);
+            })
+            .attr("height", "20")
+            .attr("x", 0)
+            .attr("width", function (d) {
+                return x(d.count);
+            })
+			.attr("fill", "orange")
+			.style("stroke", "black")
+			.style("stroke-width", "1")
+			.style("opacity", "0.6")
+			.on("mouseover", function(d) {
+				div.transition()		
+                .duration(200)		
+                .style("opacity", .9);		
+            div	.html(d.count + "<br/>"  + d.name)	
+                .style("left", (d3.event.pageX) + "px")		
+                .style("top", (d3.event.pageY - 28) + "px");	
+				d3.select(this).transition().style("opacity", "0.9")})
+			.on("mouseout", function(d) {
+				div.transition()		
+                .duration(200)		
+                .style("opacity", .0);		
+				d3.select(this).transition().duration("25").style("opacity", "0.6")
+				});
+
+        //add a value label to the right of each bar
+        bars.append("text")
+            .attr("class", "label")
+            //y position of the label is halfway down the bar
+            .attr("y", function (d) {
+                return y(d.name) + "32" / 2 ;
+            })
+            //x position is 3 pixels to the right of the bar
+            .attr("x", function (d) {
+                return x(d.count) + 3;
+            })
+            .text(function (d) {
+                return d.count;
+            });
+        });
+	</script>	

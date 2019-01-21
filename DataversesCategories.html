@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+ 
+ 
+<body>
+<u></u>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+<style>
+.node-value {
+  margin: 4px;
+}
+
+.node-value {
+  margin-top: -2px;
+}
+
+.node-value {
+  font-weight: bold;
+}
+
+</style>
+<script>
+  d3.json("uploads/1/1/4/5/114501131/bycategory.json").then(function(d) {
+	var attrs= { "category": "A", "children": d.data }  
+	var width = 800, height = 500;
+	
+  root = d3.hierarchy(attrs);
+  root
+    .sum(function(d) { return d.count; })
+ 
+ 
+  var treemap = d3.treemap()
+    .size([width, height])
+    .padding(1)
+    .round(true);
+ 
+  treemap(root);
+
+	
+  var g = d3.select("u").append("svg").attr("width", "800").attr("height", 600)
+    .selectAll("null")
+    .data(root.leaves())
+    .enter()
+    .append("g")
+    .attr("class", "node")
+    .attr("transform", function(d) { 
+		return "translate(" + d.x0 + "," + (d.y0) + ")"	})
+	
+  g.append("rect")
+    .attr("width", function(d) { return d.x1 - d.x0; })
+    .attr("height", function(d) { return d.y1 - d.y0; })
+    .attr("fill", function(d) {
+      return d3.schemeCategory10[parseInt(d.data.count % 10)];
+    })
+    .attr("opacity", 1)
+
+ 
+  g.append("text")
+    .attr("text-anchor", "start")
+    .attr("x", 5)
+    .attr("dy", 18)
+	.style("font-size", function(d) { return Math.max(15, 10+d.data.count/100) + "px"; })
+	.attr("class", "node-label")
+    .text(function(d) { return d.data.category + " : " + d.data.count; });
+  });
+	 
+
+</script>
