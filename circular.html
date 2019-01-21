@@ -1,0 +1,345 @@
+<head>
+	  <script src="https://d3js.org/d3.v5.min.js"></script>
+
+	<style>
+	div.tooltip {	
+    position: absolute;			
+    text-align: center;			
+    width: 90px;					
+    height: 30px;					
+    padding: 2px;				
+    font: 12px sans-serif;		
+    background: orange;	
+    border: 1px;		
+    border-radius: 8px;			
+    pointer-events: none;			
+}
+		body {
+		  	font-size: 10px;
+		  	font-family: 'Open Sans', sans-serif;
+		  	font-weight: 400;
+		  	fill: #8C8C8C;
+		  	text-align: center;
+		}
+
+	  	.title {
+	    	font-size: 20px;
+	    	fill: #4F4F4F;
+	    	font-weight: 300;
+	    	text-anchor: start;
+	  	}
+
+	  	.subtitle {
+	    	font-size: 14px;
+	    	fill: #AAAAAA;
+	    	font-weight: 300;
+	    	text-anchor: start;
+	  	}
+	  
+	  	.credit {
+	    	font-size: 12px;
+	    	fill: #AAAAAA;
+	    	font-weight: 300;
+	    	text-anchor: start;
+	  	}
+
+	  	.axis path,
+	  	.axis tick,
+	  	.axis line {
+	      	fill: none;
+	      	stroke: none;
+	  	}
+
+	  	.axis text {
+	      	font-size: 12px;
+	      	fill: #AAAAAA;
+	      	font-weight: 400;
+	  	}
+
+	  	.legendTitle {
+	      	font-size: 14px;
+	      	fill: #4F4F4F;
+	      	font-weight: 300;
+	  	}
+
+	  	.january {
+	  		font-size: 14px;
+	  		text-anchor: start;
+	  		font-weight: 300;
+	  		fill: #AAAAAA;
+	  	}
+
+	  	.yearLine {
+	  		stroke: #AAAAAA;
+	  	}
+
+	  	.axisText {
+	  		fill: #C4C4C4;
+	  		font-size: 11px;
+	  		font-weight: 300;
+	  		text-anchor: middle;
+	  		text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;
+	  	}
+
+	  	.axisCircles {
+	  		fill: none;
+	  		stroke: #E8E8E8;
+	  		stroke-width: 1px;
+	  	}
+
+	</style>
+
+	
+</head>	
+<body>
+	<center>
+	<p></p>
+	<script>
+
+	var margin = {
+	top: 70,
+	right: 20,
+	bottom: 70,
+	left: 20
+};
+
+var width = 750 - margin.left - margin.right - 20;
+var height = 600 - margin.top - margin.bottom - 20;
+var centerX = width * .685
+var centerY = height / 2.01
+
+//SVG container
+var svg22 = d3.select("p")
+	.append("svg")
+	.attr("width", width)
+	.attr("height", height - margin.top + margin.bottom)
+	.append("g")
+	.attr("transform", "translate(" + (width/2) + "," + (margin.top + height/2) + ")");
+
+///////////////////////////////////////////////////////////////////////////
+//////////////////////////// Create scales ////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+d3.csv("uploads/1/1/4/5/114501131/publicationsfinal.csv").then(function(data) {
+
+
+//Parses a string into a date
+var parseDate = d3.timeParse("%H:%M");
+
+//Turn strings into actual numbers/dates
+data.forEach(function(d) {
+	d.PublicationTime = parseDate(d.PublicationTime);
+});
+
+//Set the minimum inner radius and max outer radius of the chart
+var	outerRadius = Math.min(width, height, 500)/2,
+	innerRadius = outerRadius * 0.35;
+
+//Base the color scale on average temperature extremes
+var colorScale = d3.scaleLinear()
+	.domain([-1, 250, d3.max(data, function(d) { return d.count+1; })])
+	.range(["#2c7bb6", "#ffff8c", "#d7191c"])
+	.interpolate(d3.interpolateHcl);
+
+//Scale for the heights of the bar, not starting at zero to give the bars an initial offset outward
+var barScale = d3.scaleLinear()
+	.range([innerRadius, outerRadius])
+	.domain([2600,8800]); 
+
+//Scale to turn the date into an angle of 360 degrees in total
+//With the first datapoint (Jan 1st) on top
+var angle = d3.scaleLinear()
+	.range([-180, 180])
+	.domain(d3.extent(data, function(d) { return d.PublicationTime; }));	 
+
+///////////////////////////////////////////////////////////////////////////
+//////////////////////////// Create Titles ////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+var textWrapper = svg22.append("g").attr("class", "textWrapper")
+	.attr("transform", "translate(" + Math.max(-width/2, -outerRadius - 170) + "," + 0 + ")");
+
+//Append title to the top
+textWrapper.append("text")
+	.attr("class", "title")
+    .attr("x", 0)
+    .attr("y", -outerRadius - 50)
+    .text("Hour distribution of uploads within Harvard Dataverse");
+textWrapper.append("text")
+	.attr("class", "subtitle")
+    .attr("x", 0)
+    .attr("y", -outerRadius - 5)
+    .text("2007-2018");
+
+//Append credit at bottom
+textWrapper.append("text")
+	.attr("class", "credit")
+    .attr("x", 0)
+    .attr("y", outerRadius + 120)
+    .text("Draft idea");
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////// Create Axes /////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+//Wrapper for the bars and to position it downward
+var barWrapper = svg22.append("g")
+	.attr("transform", "translate(" + 0 + "," + 0 + ")");
+	
+	//Add January for reference
+barWrapper.append("text")
+	.attr("class", "january")
+	.attr("x", 3)
+	.attr("y", -outerRadius*1.2)
+	.attr("dy", "0.9em")
+	.text("");
+	
+	barWrapper.append("text")
+	.attr("class", "january")
+	.attr("x", 3)
+	.attr("y", +outerRadius*1.2)
+	.attr("dy", "0.9em")
+	.text("");
+	
+//Add a line to split the year
+barWrapper.append("line")
+	.attr("class", "yearLine")
+	.attr("x1", 0)
+	.attr("y1", 0)
+	.attr("x2", 0)
+	.attr("y2", 0	);
+	
+barWrapper.append("line")
+	.attr("class", "yearLine")
+	.attr("x1", 0)
+	.attr("y1", 0)
+	.attr("x2", 0)
+	.attr("y2", 0);
+	
+
+	
+////////////////////////////////// HORAS //////////////////////////////////
+svg22.append('g').attr('id', 'horas');
+    var grupoHoras = d3.select("svg #horas")
+        .attr('transform', 'translate(' + centerX + ',' + centerY + ')');
+		
+var lnHoras = 24;
+
+    function grados_a_radianes(grados) {
+
+        return Math.PI / 180 * grados;
+    }
+	
+var radio=20
+ for (n = 0; n < lnHoras; n++) {
+        rotation = 180 - (360 / lnHoras) * n;
+			grupoHoras.append('text')
+            .text(((n > 9) ? n : "0" + n) + ':00')
+            .attr('x', (radio + 46) * Math.sin(grados_a_radianes(rotation)) - 473)
+            .attr('y', (radio + 48) * Math.cos(grados_a_radianes(rotation)) - 216)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '6')
+            .style('font-family', 'Roboto Slab, Helvetica Neue, Helvetica, sans-serif')
+            .style('fill', '#666')
+    }
+
+///////////////////////////////////////////////////////////////////////////
+////////////////////////////// Draw bars //////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+//Draw a bar per day were the height is the difference between the minimum and maximum temperature
+//And the color is based on the mean temperature
+
+var div = d3.select("body").append("div")	
+	.attr("class", "tooltip")				
+	.style("opacity", 0);
+
+var formatTime = d3.timeFormat("%H:%M");
+
+barWrapper.selectAll(".tempBar")
+ 	.data(data)
+ 	.enter().append("rect")
+ 	.attr("class", "tempBar")
+ 	.attr("transform", function(d,i) { return "rotate(" + (angle(d.PublicationTime)) + ")"; })
+ 	.attr("width", 5)
+	.attr("height", function(d,i) { return barScale(d.count); })
+ 	.attr("x", +1.5)
+	.style("opacity", "0.73")
+ 	.attr("y", "75")
+	.style("stroke", "#000000")	
+	.style("stroke-width", "0.4px")
+ 	.style("fill", function(d) { return colorScale(d.count); })
+	.on("mouseover", function(d) {
+		d3.select(this).transition().duration("200").attr("width", "7").style("stroke-width", "0.5px").style("opacity", "1");
+				div.transition()		
+                .duration(200)		
+				div.html("<b>"+formatTime(d.PublicationTime)+"</b>"+ "<br/>"+d.count+" uploads")
+                .style("left", (d3.event.pageX) + "px")		
+                .style("top", (d3.event.pageY - 28) + "px")
+				.style("opacity", "0.9");	
+				
+				;
+
+	})
+	.on("mouseout", function(d) {
+		d3.select(this).transition().duration("0").attr("width", "5").style("stroke-width", "0.4px").style("stroke","#000000").style("opacity", "0.73");
+		d3.select(this).transition().duration("25").style("opacity", "0.8")
+		div.transition().style("opacity", 0)
+	});
+	
+///////////////////////////////////////////////////////////////////////////
+//////////////// Create the gradient for the legend ///////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+//Extra scale since the color scale is interpolated
+var tempScale = d3.scaleLinear()
+	.domain([700, 2000])
+	.range([0, width]);
+
+//Calculate the variables for the temp gradient
+var numStops = 10;
+tempRange = tempScale.domain();
+tempRange[2] = tempRange[1] - tempRange[0];
+tempPoint = [];
+for(var i = 0; i < numStops; i++) {
+	tempPoint.push(i * tempRange[2]/(numStops-1) + tempRange[0]);
+}//for i
+
+//Create the gradient
+svg22.append("defs")
+	.append("linearGradient")
+	.attr("id", "legend-weather")
+	.attr("x1", "0%").attr("y1", "0%")
+	.attr("x2", "100%").attr("y2", "0%")
+	.selectAll("stop") 
+	.data(d3.range(numStops))                
+	.enter().append("stop") 
+	.attr("offset", function(d,i) { return tempScale( tempPoint[i] )/width; })   
+	.attr("stop-color", function(d,i) { return colorScale( tempPoint[i] ); });
+
+///////////////////////////////////////////////////////////////////////////
+////////////////////////// Draw the legend ////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+var legendWidth = Math.min(outerRadius*2, 400);
+
+//Color Legend container
+var legendsvg = svg22.append("g")
+	.attr("class", "legendWrapper")
+	.attr("transform", "translate(" + 0 + "," + (outerRadius + 70) + ")");
+
+
+//Set scale for x-axis
+var xScale = d3.scaleLinear()
+	 .range([-legendWidth/2, legendWidth/2])
+	 .domain([0,3000] );
+
+//Define x-axis
+var xAxis = d3.axisLeft(xScale)
+	  .ticks(5)
+	  .tickFormat(function(d) { return (d+10)/4 + "K"; })
+	  });
+</script>
+
+</body>
+</html>
